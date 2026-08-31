@@ -1,0 +1,44 @@
+{
+  "source": "IndiGo",
+  "source_type": "direct_airline",
+  "test_route": "DEL-BOM",
+  "trip_type": "one-way",
+  "run_started_at": "2026-08-31T19:20:17.914818",
+  "run_finished_at": "2026-08-31T19:20:49.691942",
+  "active": "uncertain",
+  "domestic_fares": "uncertain",
+  "public_access": "uncertain",
+  "login_required": "uncertain",
+  "js_dependency": "uncertain",
+  "browser_automation": "playwright",
+  "structured_data": "uncertain",
+  "repeat_query_result": "Variable",
+  "anti_bot_observed": "none_observed",
+  "robots_txt_status": "allowed",
+  "robots_txt_disallowed_paths": [],
+  "source_provenance": "direct",
+  "suitability": "LOW",
+  "suitability_reason": "Permitted by robots.txt, but no structured fares were extracted.",
+  "fields_captured": {},
+  "observations": [],
+  "steps": [
+    {
+      "step": "robots_check_home",
+      "status": "ok",
+      "detail": "https://www.goindigo.in/ permitted",
+      "timestamp": "2026-08-31T19:20:17.916636"
+    },
+    {
+      "step": "attempt_1",
+      "status": "error",
+      "detail": "TimeoutError: Page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"https://www.goindigo.in/\", waiting until \"domcontentloaded\"\n",
+      "timestamp": "2026-08-31T19:20:48.915653"
+    }
+  ],
+  "artifacts": {
+    "raw_html": [],
+    "screenshots": [],
+    "json": []
+  },
+  "notes": []
+}

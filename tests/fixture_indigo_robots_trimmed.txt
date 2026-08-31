@@ -1,0 +1,17 @@
+User-Agent: *
+Disallow: /search.html
+Disallow: /errors
+Disallow: /offers.html
+Disallow: /booking-v1.html
+Disallow: /book-flight.html
+Disallow: /content/indigo/airlines/*
+Disallow: /content/skyplus6e/in/en/bookings/*
+Disallow: /bookings/*
+Disallow: /content/skyplus6e/in/en/book/*
+Disallow: /book/*
+Disallow: /content/indigo/in/en/booking/*
+Disallow: /booking/*
+Disallow: /content/indigo/in/en/check-in/*
+Disallow: /check-in/*
+
+Sitemap: https://www.goindigo.in/sitemap.xml
