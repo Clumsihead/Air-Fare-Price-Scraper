@@ -1,3 +1,4 @@
 playwright==1.56.0
 protego>=0.3.0
 requests>=2.31.0
+pytest>=9.0.0
