@@ -68,6 +68,7 @@ class FeasibilityReport:
     anti_bot_observed: str = "none_observed"
     robots_txt_status: str = "not_checked"
     robots_txt_disallowed_paths: list[str] = field(default_factory=list)
+    robots_txt_fetch_error: Optional[str] = None
     source_provenance: str = "direct"
 
     suitability: str = "NOT SUITABLE"          # HIGH/MEDIUM/LOW/NOT SUITABLE

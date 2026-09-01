@@ -96,18 +96,30 @@ class BaseAirfareAdapter(ABC):
 
         # 1. robots.txt for the homepage, checked BEFORE opening a browser.
         home_decision = self.robots.is_allowed(self.home_url)
-        report.robots_txt_status = "allowed" if home_decision.allowed else "disallowed"
-        save_text(self.robots.raw_text or f"(fetch failed: {home_decision.fetch_error})",
-                  self.cfg.reports_dir / f"{self.cfg.source_name}_robots_snapshot.txt")
 
-        if not home_decision.allowed:
-            report.log("robots_check_home", "blocked", home_decision.matched_rule_hint or "disallowed")
-            report.suitability = "NOT SUITABLE"
-            report.suitability_reason = (
-                f"robots.txt disallows the entry URL ({self.home_url}) for user-agent "
-                f"'{self.cfg.user_agent}'. Per project policy this source is not automated "
-                f"further without explicit permission from the site owner."
-            )
+        report.robots_txt_status = home_decision.status
+        report.robots_txt_fetch_error = home_decision.fetch_error
+
+        if home_decision.status != "allowed":
+            if home_decision.status == "disallowed":
+                report.notes.append(
+                    "robots.txt explicitly disallows the target URL."
+                )
+                report.suitability = "NOT SUITABLE"
+                report.suitability_reason = (
+                    "robots.txt explicitly disallows the target URL; "
+                    "browser automation was not attempted."
+                )
+            else:
+                report.notes.append(
+                    "robots.txt could not be verified; access was not attempted."
+                )
+                report.suitability = "NOT SUITABLE"
+                report.suitability_reason = (
+                    "robots.txt could not be verified; "
+                    "browser automation was not attempted."
+                )
+
             report.finish()
             self._persist_report(report)
             return report

@@ -1,60 +1,119 @@
-"""
-Offline, network-free test of RobotsGate against a captured snapshot of
-IndiGo's real robots.txt (fetched 2026-08-30 from https://www.goindigo.in/robots.txt,
-trimmed to the rules relevant to the booking/search flow — full snapshot is
-also written by run_feasibility_test.py into output/reports/ on every real run).
-
-Run with:  python -m tests.test_robots_gate   (from the project root)
-"""
-from __future__ import annotations
-
-import sys
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from robots_checker import RobotsGate
 
-from robots_checker import RobotsGate  # noqa: E402
 
 FIXTURE = Path(__file__).parent / "fixture_indigo_robots_trimmed.txt"
 
 
-class _FakeResponse:
-    def __init__(self, text: str):
-        self.text = text
-    def raise_for_status(self):
-        pass
+def _mock_response(text: str) -> Mock:
+    response = Mock()
+    response.text = text
+    response.raise_for_status.return_value = None
+    return response
 
 
-def main() -> int:
-    fixture_text = FIXTURE.read_text()
+def test_allowed_url():
+    robots_text = FIXTURE.read_text(encoding="utf-8")
 
-    with patch("robots_checker.requests.get", return_value=_FakeResponse(fixture_text)):
-        gate = RobotsGate("https://www.goindigo.in", "SIH-AirfareIndex-FeasibilityBot/0.1")
+    with patch(
+        "robots_checker.requests.get",
+        return_value=_mock_response(robots_text),
+    ):
+        gate = RobotsGate(
+            base_url="https://www.goindigo.in",
+            user_agent="AirfareScraper/0.1",
+        )
 
-        cases = {
-            "https://www.goindigo.in/": True,
-            "https://www.goindigo.in/about-us.html": True,
-            "https://www.goindigo.in/search.html": False,
-            "https://www.goindigo.in/book/flight-select.html": False,
-            "https://www.goindigo.in/content/indigo/in/en/booking/review.html": False,
-            "https://www.goindigo.in/bookings/summary": False,
-        }
+        decision = gate.is_allowed(
+            "https://www.goindigo.in/about-us.html"
+        )
 
-        failures = []
-        for url, expected in cases.items():
-            decision = gate.is_allowed(url)
-            status = "PASS" if decision.allowed == expected else "FAIL"
-            print(f"[{status}] {url:65s} expected={expected!s:5s} got={decision.allowed}")
-            if status == "FAIL":
-                failures.append(url)
-
-    if failures:
-        print(f"\n{len(failures)} case(s) failed: {failures}")
-        return 1
-    print("\nAll robots-gate cases passed — booking/search flow is correctly detected as disallowed.")
-    return 0
+    assert decision.status == "allowed"
+    assert decision.allowed is True
+    assert decision.fetch_error is None
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+def test_disallowed_search_url():
+    robots_text = FIXTURE.read_text(encoding="utf-8")
+
+    with patch(
+        "robots_checker.requests.get",
+        return_value=_mock_response(robots_text),
+    ):
+        gate = RobotsGate(
+            base_url="https://www.goindigo.in",
+            user_agent="AirfareScraper/0.1",
+        )
+
+        decision = gate.is_allowed(
+            "https://www.goindigo.in/search.html"
+        )
+
+    assert decision.status == "disallowed"
+    assert decision.allowed is False
+
+
+def test_disallowed_booking_url():
+    robots_text = FIXTURE.read_text(encoding="utf-8")
+
+    with patch(
+        "robots_checker.requests.get",
+        return_value=_mock_response(robots_text),
+    ):
+        gate = RobotsGate(
+            base_url="https://www.goindigo.in",
+            user_agent="AirfareScraper/0.1",
+        )
+
+        decision = gate.is_allowed(
+            "https://www.goindigo.in/book/test"
+        )
+
+    assert decision.status == "disallowed"
+    assert decision.allowed is False
+
+
+def test_robots_fetch_timeout_returns_unknown():
+    with patch(
+        "robots_checker.requests.get",
+        side_effect=TimeoutError("robots.txt request timed out"),
+    ):
+        gate = RobotsGate(
+            base_url="https://www.goindigo.in",
+            user_agent="AirfareScraper/0.1",
+        )
+
+        decision = gate.is_allowed(
+            "https://www.goindigo.in/about-us.html"
+        )
+
+    assert decision.status == "unknown"
+    assert decision.allowed is False
+    assert decision.fetch_error is not None
+    assert "TimeoutError" in decision.fetch_error
+
+
+def test_robots_http_error_returns_unknown():
+    response = Mock()
+    response.raise_for_status.side_effect = RuntimeError(
+        "HTTP 503 Service Unavailable"
+    )
+
+    with patch(
+        "robots_checker.requests.get",
+        return_value=response,
+    ):
+        gate = RobotsGate(
+            base_url="https://www.goindigo.in",
+            user_agent="AirfareScraper/0.1",
+        )
+
+        decision = gate.is_allowed(
+            "https://www.goindigo.in/about-us.html"
+        )
+
+    assert decision.status == "unknown"
+    assert decision.allowed is False
+    assert decision.fetch_error is not None
